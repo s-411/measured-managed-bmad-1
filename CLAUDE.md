@@ -2,126 +2,155 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+
 ## Project Overview
 
-This repository contains the **MM Design System** and project planning for Measured Managed applications. The main components are:
+This repository contains multiple related projects for the Measured Managed ecosystem:
 
-- **Design System** (`design-system-cpn/`) - Complete styling package extracted from MM v2, built with Tailwind CSS 4.0
-- **Project Planning** (`Project Overview/`, `mm-health-tracker-prd.md`) - Development roadmaps and implementation guides for new health tracking application
-- **Example Layouts** - Reference implementations and UI patterns
+1. **MM Design System** (`design-system-cpn/`) - Complete styling package with Tailwind CSS 4.0
+2. **MM Health Tracker** (`mm-health-tracker/`) - Comprehensive health and fitness tracking application
+3. **Project Documentation** (`spec/`, `Project Overview/`) - Feature specifications and implementation guides
 
 ## Common Commands
 
-### Development
+### MM Health Tracker
 ```bash
-npm run dev          # Start Next.js development server
-npm run build        # Build the application
+cd mm-health-tracker
+npm run dev          # Start development server (port 3000)
+npm run dev -- -p 3001  # Start on port 3001 (commonly used)
+npm run build        # Build production application
 npm run start        # Start production server
 npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript type checking
 ```
 
-### Dependencies
-- **Node.js**: >=18.0.0 required
-- **Core**: Tailwind CSS 4.1, PostCSS, Next.js >=14.0.0
-- **Peer Dependencies**: React >=18.0.0, React DOM >=18.0.0
+### Design System
+The design system is a standalone CSS package without its own build commands. Import `design-system-cpn/styles/globals.css` in applications.
 
-## Architecture
+## Architecture Overview
 
-### Directory Structure
+### Repository Structure
 ```
-design-system-cpn/
-├── styles/globals.css           # Complete CSS system with Tailwind 4.0 theme
-├── fonts/                       # Custom fonts (National2Condensed, ESKlarheit)
-├── config/                      # Design tokens and color definitions
-│   ├── colors.json             # Color palette reference
-│   └── design-tokens.json      # Complete design specifications
-└── examples/                    # React component examples
-    ├── button-examples.tsx     # Button patterns and variations
-    ├── card-examples.tsx       # Card layouts and components
-    ├── form-examples.tsx       # Form inputs and validation
-    └── layout-examples.tsx     # Navigation and layout structures
+/
+├── mm-health-tracker/           # Main Next.js application
+│   ├── src/
+│   │   ├── app/                # Next.js app router pages
+│   │   ├── components/         # React components
+│   │   ├── lib/                # Utilities and storage layer
+│   │   └── types/              # TypeScript definitions
+│   └── package.json            # Dependencies and scripts
+│
+├── design-system-cpn/           # Shared design system
+│   ├── styles/globals.css      # Tailwind 4.0 theme
+│   ├── fonts/                  # Custom fonts
+│   └── examples/               # Component examples
+│
+└── spec/features/               # Feature specifications
 ```
+
+### MM Health Tracker Architecture
+
+**Technology Stack:**
+- Next.js 15.5.3, React 19.1.0, TypeScript 5
+- Tailwind CSS 4.0 with custom theme
+- localStorage-based persistence (no database)
+- Recharts for data visualization
+
+**Data Storage Layer** (`mm-health-tracker/src/lib/storage.ts`):
+11 specialized storage modules handling different data domains:
+- User profiles and BMR calculations
+- Daily health entries (calories, exercise, weight)
+- Nirvana Life training sessions
+- Injectable compound management
+- Weekly objectives and MIT planning
+
+**State Management:**
+- React Context + useReducer for global state
+- Hybrid approach: Context for daily entries, direct localStorage for specialized features
+- Date-keyed storage using `YYYY-MM-DD` format
+
+**Key Features:**
+1. BMR-based calorie tracking with real-time balance calculation
+2. Comprehensive exercise logging with calorie burn
+3. Injectable compound tracking with weekly targets
+4. Nirvana Life training (gymnastics/mobility) with progress milestones
+5. Advanced analytics with 6+ visualization types
+6. MIT planning and weekly objectives management
 
 ### Design System Architecture
 
-**Theme Configuration**: Uses Tailwind CSS 4.0's `@theme` directive in `styles/globals.css` to define custom properties:
-- **Primary Brand Color**: `--color-mm-blue: #00A1FE` (single source of truth - change here updates entire system)
-- **Supporting Colors**: mm-dark (#1f1f1f), mm-dark2 (#2a2a2a), mm-white (#ffffff), mm-gray (#ababab)
-- **Custom Fonts**: National2Condensed (headings), ESKlarheit (body text)
-- **Border Radius**: `--radius-mm: 100px` (signature button style), plus card/input variants
-- **Transition Timing**: Fast (0.2s), medium (0.3s), slow (0.5s) tokens
+**Theme Configuration** (`design-system-cpn/styles/globals.css`):
+- **Brand Color**: `--color-mm-blue: #00A1FE` (single source of truth)
+- **Dark Theme**: mm-dark (#1f1f1f), mm-dark2 (#2a2a2a)
+- **Typography**: National2Condensed (headings), ESKlarheit (body)
+- **Border Radius**: `--radius-mm: 100px` for signature button styling
 
-**Component System**: Built around reusable CSS classes:
-- `.btn-mm` - Primary blue buttons with 100px border radius
-- `.btn-secondary` - Outlined secondary buttons
-- `.input-mm` - Dark theme form inputs with blue focus states
-- `.card-mm` - Standard card component with dark theme styling
-- `.glass-card` - Semi-transparent cards with backdrop blur
-- `.rating-tile` - Signature hotness rating grid system
+**Component Classes:**
+- `.btn-mm` - Primary blue buttons
+- `.card-mm` - Dark theme cards
+- `.input-mm` - Form inputs with blue focus
+- `.glass-card` - Semi-transparent cards
 
-**Color System**: Uses CSS `color-mix()` for dynamic transparency effects and modern color manipulation without opacity utilities.
+## Key Implementation Patterns
 
-**Typography**: Automatic font assignment via CSS:
-- Headings (h1-h6) automatically use National2Condensed
-- Body text automatically uses ESKlarheit
-- `.font-heading` and `.font-body` classes available for manual override
+### Date Handling
+- All dates stored as `YYYY-MM-DD` strings
+- Timezone-safe Date creation with `+ 'T12:00:00'` suffix
+- Monday-based weeks for weekly objectives
 
-**Responsive Design**: Mobile-first approach with specific patterns:
-- Desktop sidebar → Mobile bottom navigation
-- Desktop tables → Mobile card layouts
-- Breakpoints: mobile (max 768px), tablet (769-1024px), desktop (1025px+)
+### Storage Module Pattern
+When adding new data types:
+1. Define TypeScript interface in `src/types/index.ts`
+2. Create storage module with get/save/CRUD operations
+3. Handle SSR safety with `typeof window === 'undefined'` checks
+4. Add date serialization/deserialization
 
-### Key Design Patterns
+### Component Patterns
+- Page components handle their own data loading
+- Consistent card-based layouts with `card-mm` class
+- Modal forms for data entry
+- Responsive grid systems
 
-**Signature Elements**:
-- 100px border radius buttons for distinctive blue branding
-- Dark theme (#1f1f1f) with strategic blue accent (#00A1FE)
-- Glass morphism effects using `color-mix()` and `backdrop-filter`
-- Two-row rating grid system (5.0-7.5, 8.0-10.0)
+## Feature Specifications
 
-**Layout Patterns**:
-- Flex-based app shell with sidebar and main content
-- Card-grid layouts for responsive content display
-- Mobile-bottom navigation with icon + label pattern
+Detailed specifications for all 14 major features are available in `/spec/features/`:
 
-### Integration Guidelines
+**Core Health Tracking:**
+- User Profile Management
+- Daily Health Dashboard
+- Calorie & Macro Tracking
+- Injectable Compound Management
 
-When implementing this design system:
-1. Copy font files to `/public/fonts/`
-2. Import `styles/globals.css` in main layout
-3. Use `bg-mm-dark text-mm-white` on root layout
-4. Reference `/examples/` for component implementation patterns
-5. Use design tokens from `/config/design-tokens.json` for specifications
+**Productivity Features:**
+- MIT Planning System
+- Weekly Objectives Management
+- Deep Work Tracking
 
-### Color System Management
+**Specialized Training:**
+- Nirvana Life Training
+- Progress Milestones
+- Body Part Heat Mapping
 
-**Primary Brand Color**: The entire design system's blue theme is controlled by a single CSS custom property:
-```css
---color-mm-blue: #00A1FE;
-```
-- Changing this value in `styles/globals.css` automatically updates all buttons, focus states, hover effects, and brand accents
-- All components reference `var(--color-mm-blue)` ensuring consistent theming
-- Provides flexibility to adjust the blue shade system-wide from one location
+**Analytics:**
+- Comprehensive Analytics Dashboard
 
-### Package Information
+## Development Guidelines
 
-- **Name**: mm-design-system
-- **Type**: Private package for Measured Managed applications
-- **License**: MIT
-- **Main Entry**: styles/globals.css
+### When Building New Features
+1. Check existing patterns in `mm-health-tracker/src/`
+2. Use established storage modules from `lib/storage.ts`
+3. Follow the Context vs Direct Storage decision tree:
+   - Use Context for daily health metrics
+   - Use Direct Storage for specialized features
+4. Maintain consistent date handling (`YYYY-MM-DD` format)
 
-## Development Context
+### When Using the Design System
+1. Import `design-system-cpn/styles/globals.css`
+2. Apply `bg-mm-dark text-mm-white` to root layout
+3. Use provided component classes (`.btn-mm`, `.card-mm`, etc.)
+4. Reference examples in `design-system-cpn/examples/`
 
-### Project Planning Files
-- `mm-health-tracker-prd.md` - Phased development plan for health tracking application
-- `Project Overview/NEW_PROJECT_ROADMAP.md` - Step-by-step implementation roadmap with commands
-- `Project Overview/CODE_TEMPLATES_AND_PATTERNS.md` - Reusable code patterns and templates
-- `Project Overview/PROJECT_ANALYSIS_AND_REPLICATION_GUIDE.md` - Analysis of existing implementation
-
-### Design System Usage
-When building new applications with this design system:
-1. The design system is **pre-existing and complete** - do not modify core styles
-2. All new development should replicate existing design patterns exactly
-3. Use provided examples and screenshots as reference for exact implementation
-4. Focus on **incremental development** - build one page at a time to completion
+### Testing Approach
+Currently no test framework is configured. When adding tests in the future, consider:
+- Unit tests for storage modules and calculations
+- Integration tests for data persistence
+- Component tests for form validation
