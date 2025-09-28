@@ -1,7 +1,26 @@
-// MM Health Tracker - localStorage Storage Layer
-// Based on roadmap specifications
+// MM Health Tracker - Supabase Database Storage Layer
+// Refactored from localStorage to use Supabase for persistent data storage
 
-import { UserProfile, DailyEntry, CalorieEntry, ExerciseEntry, InjectionEntry, InjectionTarget, MITEntry, WeeklyEntry, WeeklyObjective, NirvanaSession, NirvanaEntry, NirvanaMilestone, PersonalRecord, NirvanaProgress, SessionTypeMapping, BodyPart, BodyPartUsage, SessionCorrelation, SessionInsight, CorrelationAnalysis } from '@/types';
+import { createClientSupabase } from '@/lib/supabase/client'
+import { createServerSupabase } from '@/lib/supabase/server'
+import { UserProfile, DailyEntry, CalorieEntry, ExerciseEntry, InjectionEntry, InjectionTarget, MITEntry, WeeklyEntry, WeeklyObjective, NirvanaSession, NirvanaEntry, NirvanaMilestone, PersonalRecord, NirvanaProgress, SessionTypeMapping, BodyPart, BodyPartUsage, SessionCorrelation, SessionInsight, CorrelationAnalysis } from '@/types'
+import type { Database } from '@/lib/supabase/types'
+
+// Helper to get authenticated Supabase client
+async function getSupabaseClient() {
+  if (typeof window !== 'undefined') {
+    return createClientSupabase()
+  } else {
+    return createServerSupabase()
+  }
+}
+
+// Helper to get current user ID
+async function getCurrentUserId(): Promise<string | null> {
+  const supabase = await getSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.id || null
+}
 
 // Utility functions
 export function generateId(): string {
@@ -38,112 +57,283 @@ export function getDayOfWeek(date: string): number {
 
 // Profile Storage
 export const profileStorage = {
-  get(): UserProfile | null {
-    if (typeof window === 'undefined') return null;
-    const stored = localStorage.getItem('mm-health-profile');
-    if (!stored) return null;
+  async get(): Promise<UserProfile | null> {
+    const userId = await getCurrentUserId()
+    if (!userId) return null
 
-    const profile = safeParseJSON<UserProfile | null>(stored, null);
-    if (profile) {
-      // Convert date strings back to Date objects
-      profile.createdAt = new Date(profile.createdAt);
-      profile.updatedAt = new Date(profile.updatedAt);
+    const supabase = await getSupabaseClient()
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (error || !data) return null
+
+    // Convert database row to UserProfile format
+    return {
+      id: data.user_id,
+      name: data.name,
+      email: data.email,
+      age: data.age,
+      gender: data.gender as 'male' | 'female' | 'other',
+      height: data.height_cm,
+      weight: data.current_weight_kg,
+      activityLevel: data.activity_level as UserProfile['activityLevel'],
+      bmr: data.bmr,
+      tdee: data.tdee,
+      calorieTarget: data.calorie_target,
+      proteinTarget: data.protein_target_g,
+      carbsTarget: data.carbs_target_g,
+      fatsTarget: data.fats_target_g,
+      units: data.units as 'metric' | 'imperial',
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
     }
-    return profile;
   },
 
-  save(profile: UserProfile): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('mm-health-profile', JSON.stringify(profile));
+  async save(profile: UserProfile): Promise<void> {
+    const userId = await getCurrentUserId()
+    if (!userId) throw new Error('User not authenticated')
+
+    const supabase = await getSupabaseClient()
+    const { error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        user_id: userId,
+        name: profile.name,
+        email: profile.email,
+        age: profile.age,
+        gender: profile.gender,
+        height_cm: profile.height,
+        current_weight_kg: profile.weight,
+        activity_level: profile.activityLevel,
+        bmr: profile.bmr,
+        tdee: profile.tdee,
+        calorie_target: profile.calorieTarget,
+        protein_target_g: profile.proteinTarget,
+        carbs_target_g: profile.carbsTarget,
+        fats_target_g: profile.fatsTarget,
+        units: profile.units,
+        updated_at: new Date().toISOString()
+      })
+
+    if (error) throw error
   },
 
-  update(updates: Partial<UserProfile>): UserProfile | null {
-    const existing = this.get();
-    if (!existing) return null;
+  async update(updates: Partial<UserProfile>): Promise<UserProfile | null> {
+    const existing = await this.get()
+    if (!existing) return null
 
     const updated = {
       ...existing,
       ...updates,
       updatedAt: new Date()
-    };
+    }
 
-    this.save(updated);
-    return updated;
+    await this.save(updated)
+    return updated
   },
 
-  create(profileData: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>): UserProfile {
+  async create(profileData: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserProfile> {
+    const userId = await getCurrentUserId()
+    if (!userId) throw new Error('User not authenticated')
+
     const profile: UserProfile = {
       ...profileData,
-      id: generateId(),
+      id: userId,
       createdAt: new Date(),
       updatedAt: new Date()
-    };
+    }
 
-    this.save(profile);
-    return profile;
+    await this.save(profile)
+    return profile
   },
 
-  isComplete(): boolean {
-    const profile = this.get();
-    if (!profile) return false;
-    
+  async isComplete(): Promise<boolean> {
+    const profile = await this.get()
+    if (!profile) return false
+
     // Check if all required fields are present and valid
     return !!(
       profile.bmr && profile.bmr > 0 &&
       profile.height && profile.height > 0 &&
       profile.weight && profile.weight > 0 &&
       profile.gender
-    );
+    )
   }
 };
 
 // Daily Entry Storage
 export const dailyEntryStorage = {
-  getByDate(date: string): DailyEntry | null {
-    if (typeof window === 'undefined') return null;
-    const stored = localStorage.getItem(`mm-daily-entry-${date}`);
-    if (!stored) return null;
+  async getByDate(date: string): Promise<DailyEntry | null> {
+    const userId = await getCurrentUserId()
+    if (!userId) return null
 
-    const entry = safeParseJSON<DailyEntry | null>(stored, null);
-    if (entry) {
-      // Convert date strings back to Date objects
-      entry.createdAt = new Date(entry.createdAt);
-      entry.updatedAt = new Date(entry.updatedAt);
-      entry.calories = entry.calories.map(cal => ({
-        ...cal,
-        timestamp: new Date(cal.timestamp)
-      }));
-      entry.exercises = entry.exercises.map(ex => ({
-        ...ex,
-        timestamp: new Date(ex.timestamp)
-      }));
-      entry.injections = entry.injections.map(inj => ({
-        ...inj,
-        timestamp: new Date(inj.timestamp)
-      }));
+    const supabase = await getSupabaseClient()
+
+    // Get daily entry
+    const { data: dailyData, error: dailyError } = await supabase
+      .from('daily_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', date)
+      .single()
+
+    if (dailyError || !dailyData) return null
+
+    // Get related food entries
+    const { data: foodEntries } = await supabase
+      .from('food_entries')
+      .select('*')
+      .eq('daily_entry_id', dailyData.id)
+      .order('consumed_at', { ascending: true })
+
+    // Get related exercise entries
+    const { data: exerciseEntries } = await supabase
+      .from('exercise_entries')
+      .select('*')
+      .eq('daily_entry_id', dailyData.id)
+      .order('performed_at', { ascending: true })
+
+    // Convert to DailyEntry format
+    const calories: CalorieEntry[] = (foodEntries || []).map(food => ({
+      id: food.id,
+      food: food.name,
+      calories: food.calories,
+      protein: food.protein_g,
+      carbs: food.carbs_g,
+      fat: food.fats_g,
+      timestamp: new Date(food.consumed_at)
+    }))
+
+    const exercises: ExerciseEntry[] = (exerciseEntries || []).map(exercise => ({
+      id: exercise.id,
+      name: exercise.name,
+      duration: exercise.duration_minutes,
+      caloriesBurned: exercise.calories_burned,
+      timestamp: new Date(exercise.performed_at)
+    }))
+
+    return {
+      id: dailyData.id,
+      date: dailyData.date,
+      weight: dailyData.weight_kg,
+      calories,
+      exercises,
+      deepWorkCompleted: dailyData.deep_work_completed,
+      injections: [], // Will implement injection entries separately
+      mits: dailyData.mit_task_1 ? [
+        { id: '1', task: dailyData.mit_task_1, completed: dailyData.mit_task_1_completed },
+        ...(dailyData.mit_task_2 ? [{ id: '2', task: dailyData.mit_task_2, completed: dailyData.mit_task_2_completed }] : []),
+        ...(dailyData.mit_task_3 ? [{ id: '3', task: dailyData.mit_task_3, completed: dailyData.mit_task_3_completed }] : [])
+      ] : [],
+      createdAt: new Date(dailyData.created_at),
+      updatedAt: new Date(dailyData.updated_at)
     }
-    return entry;
   },
 
-  save(entry: DailyEntry): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(`mm-daily-entry-${entry.date}`, JSON.stringify(entry));
+  async save(entry: DailyEntry): Promise<void> {
+    const userId = await getCurrentUserId()
+    if (!userId) throw new Error('User not authenticated')
+
+    const supabase = await getSupabaseClient()
+
+    // Calculate totals from arrays
+    const totalCalories = entry.calories.reduce((sum, cal) => sum + cal.calories, 0)
+    const totalProtein = entry.calories.reduce((sum, cal) => sum + cal.protein, 0)
+    const totalCarbs = entry.calories.reduce((sum, cal) => sum + cal.carbs, 0)
+    const totalFats = entry.calories.reduce((sum, cal) => sum + cal.fat, 0)
+    const totalExerciseCalories = entry.exercises.reduce((sum, ex) => sum + ex.caloriesBurned, 0)
+
+    // Upsert daily entry
+    const { data: dailyData, error: dailyError } = await supabase
+      .from('daily_entries')
+      .upsert({
+        id: entry.id,
+        user_id: userId,
+        date: entry.date,
+        weight_kg: entry.weight,
+        calories_consumed: totalCalories,
+        calories_burned_exercise: totalExerciseCalories,
+        calories_burned_bmr: 0, // Will calculate from profile
+        protein_consumed_g: Math.round(totalProtein),
+        carbs_consumed_g: Math.round(totalCarbs),
+        fats_consumed_g: Math.round(totalFats),
+        mit_task_1: entry.mits?.[0]?.task || null,
+        mit_task_1_completed: entry.mits?.[0]?.completed || false,
+        mit_task_2: entry.mits?.[1]?.task || null,
+        mit_task_2_completed: entry.mits?.[1]?.completed || false,
+        mit_task_3: entry.mits?.[2]?.task || null,
+        mit_task_3_completed: entry.mits?.[2]?.completed || false,
+        deep_work_completed: entry.deepWorkCompleted,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (dailyError) throw dailyError
+
+    // Clear existing food entries and insert new ones
+    await supabase.from('food_entries').delete().eq('daily_entry_id', dailyData.id)
+
+    if (entry.calories.length > 0) {
+      const foodInserts = entry.calories.map(cal => ({
+        user_id: userId,
+        daily_entry_id: dailyData.id,
+        name: cal.food,
+        calories: cal.calories,
+        protein_g: cal.protein,
+        carbs_g: cal.carbs,
+        fats_g: cal.fat,
+        amount: 1,
+        unit: 'serving',
+        meal_type: 'other' as const,
+        consumed_at: cal.timestamp.toISOString()
+      }))
+
+      const { error: foodError } = await supabase.from('food_entries').insert(foodInserts)
+      if (foodError) throw foodError
+    }
+
+    // Clear existing exercise entries and insert new ones
+    await supabase.from('exercise_entries').delete().eq('daily_entry_id', dailyData.id)
+
+    if (entry.exercises.length > 0) {
+      const exerciseInserts = entry.exercises.map(ex => ({
+        user_id: userId,
+        daily_entry_id: dailyData.id,
+        name: ex.name,
+        category: 'cardio' as const,
+        met_value: 5, // Default MET value
+        duration_minutes: ex.duration,
+        calories_burned: ex.caloriesBurned,
+        intensity: 'moderate' as const,
+        performed_at: ex.timestamp.toISOString()
+      }))
+
+      const { error: exerciseError } = await supabase.from('exercise_entries').insert(exerciseInserts)
+      if (exerciseError) throw exerciseError
+    }
   },
 
-  createOrUpdate(date: string, updates: Partial<DailyEntry>): DailyEntry {
-    const existing = this.getByDate(date);
+  async createOrUpdate(date: string, updates: Partial<DailyEntry>): Promise<DailyEntry> {
+    const existing = await this.getByDate(date)
 
     if (existing) {
       const updated = {
         ...existing,
         ...updates,
         updatedAt: new Date()
-      };
-      this.save(updated);
-      return updated;
+      }
+      await this.save(updated)
+      return updated
     } else {
+      const userId = await getCurrentUserId()
+      if (!userId) throw new Error('User not authenticated')
+
       const newEntry: DailyEntry = {
-        id: generateId(),
+        id: crypto.randomUUID(),
         date,
         calories: [],
         exercises: [],
@@ -153,9 +343,9 @@ export const dailyEntryStorage = {
         createdAt: new Date(),
         updatedAt: new Date(),
         ...updates
-      };
-      this.save(newEntry);
-      return newEntry;
+      }
+      await this.save(newEntry)
+      return newEntry
     }
   },
 
