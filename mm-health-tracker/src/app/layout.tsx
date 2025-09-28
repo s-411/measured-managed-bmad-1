@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from '@/lib/context';
+import { AuthProvider } from '@/lib/context/AuthContext';
+import { ProfileProvider } from '@/lib/context/ProfileContext';
 import { AppShell } from '@/components/Navigation';
 
 export const metadata: Metadata = {
@@ -21,11 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-mm-dark text-mm-white" suppressHydrationWarning>
-        <AppProvider>
-          <AppShell>
-            {children}
-          </AppShell>
-        </AppProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <AppProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </AppProvider>
+          </ProfileProvider>
+        </AuthProvider>
       </body>
     </html>
   );

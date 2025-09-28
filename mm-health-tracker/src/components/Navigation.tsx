@@ -155,6 +155,16 @@ export function MobileNavigation() {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Pages that should not show navigation
+  const noNavPages = ['/auth/login', '/auth/register', '/profile/setup'];
+  const showNavigation = !noNavPages.includes(pathname);
+
+  if (!showNavigation) {
+    return <div className="min-h-screen bg-mm-dark">{children}</div>;
+  }
+
   return (
     <div className="flex h-screen bg-mm-dark">
       {/* Desktop Sidebar */}
