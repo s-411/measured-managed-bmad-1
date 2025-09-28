@@ -34,7 +34,7 @@ A comprehensive health and fitness tracking application built with Next.js, Reac
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd measured-managed-bmad-1/mm-health-tracker
+   cd measured-managed-bmad-1
    ```
 
 2. **Install dependencies**
@@ -43,7 +43,7 @@ A comprehensive health and fitness tracking application built with Next.js, Reac
    ```
 
 3. **Environment Setup**
-   Create `.env.local` in the mm-health-tracker directory:
+   Create `.env.local` in the root directory:
    ```bash
    # Supabase Configuration
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -70,30 +70,35 @@ npm start
 ## 🏗️ Project Structure
 
 ```
-mm-health-tracker/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── auth/              # Authentication pages
-│   │   ├── daily/             # Main dashboard
-│   │   ├── analytics/         # Data visualization
-│   │   ├── calories/          # Calorie tracking
-│   │   ├── injections/        # Compound management
-│   │   ├── nirvana/           # Training tracking
-│   │   └── profile/           # User settings
-│   ├── components/            # Reusable React components
-│   │   ├── auth/              # Authentication components
-│   │   ├── dashboard/         # Dashboard widgets
-│   │   ├── food/              # Nutrition components
-│   │   ├── guards/            # Route protection
-│   │   └── profile/           # Profile management
-│   ├── lib/                   # Core utilities and services
-│   │   ├── context/           # React Context providers
-│   │   ├── services/          # Business logic
-│   │   ├── supabase/          # Database client config
-│   │   └── storage.ts         # Local storage management
-│   └── types/                 # TypeScript definitions
-├── design-system-cpn/         # Shared design system
-└── supabase/                  # Database migrations
+measured-managed-bmad-1/
+├── src/                       # Next.js application source
+│   ├── app/                   # Next.js App Router pages
+│   │   ├── auth/             # Authentication pages
+│   │   ├── daily/            # Main dashboard
+│   │   ├── analytics/        # Data visualization
+│   │   ├── calories/         # Calorie tracking
+│   │   ├── injections/       # Compound management
+│   │   ├── nirvana/          # Training tracking
+│   │   └── profile/          # User settings
+│   ├── components/           # Reusable React components
+│   │   ├── auth/             # Authentication components
+│   │   ├── dashboard/        # Dashboard widgets
+│   │   ├── food/             # Nutrition components
+│   │   ├── guards/           # Route protection
+│   │   └── profile/          # Profile management
+│   ├── lib/                  # Core utilities and services
+│   │   ├── context/          # React Context providers
+│   │   ├── services/         # Business logic
+│   │   ├── supabase/         # Database client config
+│   │   └── storage.ts        # Local storage management
+│   └── types/                # TypeScript definitions
+├── public/                   # Static assets and fonts
+├── design-system-cpn/        # Shared design system
+├── supabase/                 # Database migrations
+├── package.json              # Dependencies and scripts
+├── next.config.ts            # Next.js configuration
+├── tsconfig.json             # TypeScript configuration
+└── .env.local               # Environment variables
 ```
 
 ## 🎨 Design System
