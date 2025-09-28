@@ -19,9 +19,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = getSupabaseClient()
+  const [supabase, setSupabase] = useState<any>(null)
 
   useEffect(() => {
+    try {
+      const client = getSupabaseClient()
+      setSupabase(client)
+    } catch (error) {
+      // Supabase not configured
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -42,9 +57,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase])
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: { message: 'Authentication not configured' } }
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -53,6 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: { message: 'Authentication not configured' } }
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -61,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
   }
 
