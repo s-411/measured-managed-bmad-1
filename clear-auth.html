@@ -13,20 +13,19 @@
             const result = document.getElementById('result');
             result.innerHTML = 'Clearing...';
 
-            // Clear ALL cookies except our specific project
+            // NUCLEAR OPTION: Clear ALL cookies except our specific project
             let clearedCookies = 0;
             document.cookie.split(";").forEach(function(c) {
                 const trimmed = c.trim();
                 const name = trimmed.split('=')[0];
 
-                // Clear ANY cookie that's not our specific project
-                if (!name.includes('qbfoakwchpwgoiawjqxs') && (
-                    name.includes('supabase') ||
-                    name.includes('sb-') ||
-                    name.includes('auth') ||
-                    name.includes('ynhixncsfbyaocjulpzj') ||
-                    name.includes('elaecgbjbxwcgguhtomz')
-                )) {
+                // Clear ANY cookie that's not our specific project or essential browser cookies
+                if (!name.includes('qbfoakwchpwgoiawjqxs') &&
+                    !name.includes('__cf_bm') &&
+                    !name.includes('_ga') &&
+                    !name.includes('_gid') &&
+                    !name.includes('_fbp') &&
+                    name.trim() !== '') {
                     // Clear for all possible paths and domains
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
                     document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=localhost";
@@ -37,31 +36,19 @@
                 }
             });
 
-            // Clear localStorage for ALL other Supabase projects
+            // NUCLEAR OPTION: Clear ALL localStorage except our project
             let clearedLocalStorage = 0;
             Object.keys(localStorage).forEach(key => {
-                if (!key.includes('qbfoakwchpwgoiawjqxs') && (
-                    key.includes('supabase') ||
-                    key.includes('sb-') ||
-                    key.includes('auth') ||
-                    key.includes('ynhixncsfbyaocjulpzj') ||
-                    key.includes('elaecgbjbxwcgguhtomz')
-                )) {
+                if (!key.includes('qbfoakwchpwgoiawjqxs')) {
                     localStorage.removeItem(key);
                     clearedLocalStorage++;
                 }
             });
 
-            // Clear sessionStorage for ALL other Supabase projects
+            // NUCLEAR OPTION: Clear ALL sessionStorage except our project
             let clearedSessionStorage = 0;
             Object.keys(sessionStorage).forEach(key => {
-                if (!key.includes('qbfoakwchpwgoiawjqxs') && (
-                    key.includes('supabase') ||
-                    key.includes('sb-') ||
-                    key.includes('auth') ||
-                    key.includes('ynhixncsfbyaocjulpzj') ||
-                    key.includes('elaecgbjbxwcgguhtomz')
-                )) {
+                if (!key.includes('qbfoakwchpwgoiawjqxs')) {
                     sessionStorage.removeItem(key);
                     clearedSessionStorage++;
                 }
