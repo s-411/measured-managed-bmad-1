@@ -9,17 +9,24 @@ export class ProfileService {
   private supabase = getSupabaseClient()
 
   async getProfile(userId: string): Promise<UserProfile | null> {
+    console.log('ProfileService.getProfile called with userId:', userId)
+
     const { data, error } = await this.supabase
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
 
+    console.log('ProfileService.getProfile query result:', { data, error, dataLength: data?.length })
+
     if (error) {
+      console.error('ProfileService.getProfile error:', error)
       throw new Error(`Failed to fetch profile: ${error.message}`)
     }
 
     // Return null if no profile found, or the first profile if found
-    return data && data.length > 0 ? data[0] : null
+    const result = data && data.length > 0 ? data[0] : null
+    console.log('ProfileService.getProfile returning:', result ? 'Profile found' : 'No profile found')
+    return result
   }
 
   async createProfile(profileData: UserProfileInsert): Promise<UserProfile> {
