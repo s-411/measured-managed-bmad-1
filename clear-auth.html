@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Auth</title>
+</head>
+<body>
+    <h1>Clear Other Supabase Authentication</h1>
+    <button onclick="clearAuth()">Clear Other Supabase Sessions</button>
+    <div id="result"></div>
+
+    <script>
+        function clearAuth() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Clearing...';
+
+            // Clear ALL cookies except our specific project
+            let clearedCookies = 0;
+            document.cookie.split(";").forEach(function(c) {
+                const trimmed = c.trim();
+                const name = trimmed.split('=')[0];
+
+                // Clear ANY cookie that's not our specific project
+                if (!name.includes('qbfoakwchpwgoiawjqxs') && (
+                    name.includes('supabase') ||
+                    name.includes('sb-') ||
+                    name.includes('auth') ||
+                    name.includes('ynhixncsfbyaocjulpzj') ||
+                    name.includes('elaecgbjbxwcgguhtomz')
+                )) {
+                    // Clear for all possible paths and domains
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=localhost";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.localhost";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=127.0.0.1";
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.127.0.0.1";
+                    clearedCookies++;
+                }
+            });
+
+            // Clear localStorage for ALL other Supabase projects
+            let clearedLocalStorage = 0;
+            Object.keys(localStorage).forEach(key => {
+                if (!key.includes('qbfoakwchpwgoiawjqxs') && (
+                    key.includes('supabase') ||
+                    key.includes('sb-') ||
+                    key.includes('auth') ||
+                    key.includes('ynhixncsfbyaocjulpzj') ||
+                    key.includes('elaecgbjbxwcgguhtomz')
+                )) {
+                    localStorage.removeItem(key);
+                    clearedLocalStorage++;
+                }
+            });
+
+            // Clear sessionStorage for ALL other Supabase projects
+            let clearedSessionStorage = 0;
+            Object.keys(sessionStorage).forEach(key => {
+                if (!key.includes('qbfoakwchpwgoiawjqxs') && (
+                    key.includes('supabase') ||
+                    key.includes('sb-') ||
+                    key.includes('auth') ||
+                    key.includes('ynhixncsfbyaocjulpzj') ||
+                    key.includes('elaecgbjbxwcgguhtomz')
+                )) {
+                    sessionStorage.removeItem(key);
+                    clearedSessionStorage++;
+                }
+            });
+
+            result.innerHTML = `
+                <p>Cleared ${clearedCookies} cookies</p>
+                <p>Cleared ${clearedLocalStorage} localStorage items</p>
+                <p>Cleared ${clearedSessionStorage} sessionStorage items</p>
+                <p><strong>Now refresh your app page</strong></p>
+            `;
+        }
+    </script>
+</body>
+</html>

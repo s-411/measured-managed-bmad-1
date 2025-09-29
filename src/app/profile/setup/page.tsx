@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { useAuth } from '@/lib/context/AuthContext'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 
@@ -11,6 +12,13 @@ export default function ProfileSetupPage() {
   const handleSuccess = () => {
     router.push('/daily')
   }
+
+  // Handle redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login')
+    }
+  }, [loading, user, router])
 
   // Show loading while checking auth
   if (loading) {
@@ -24,10 +32,16 @@ export default function ProfileSetupPage() {
     )
   }
 
-  // Redirect to login if not authenticated
+  // Return loading state if redirecting to login
   if (!user) {
-    router.push('/auth/login')
-    return null
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-mm-dark">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mm-blue mx-auto mb-4"></div>
+          <p className="text-mm-white">Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

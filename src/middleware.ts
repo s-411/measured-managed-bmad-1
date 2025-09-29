@@ -20,6 +20,10 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         get(name: string) {
+          // ONLY return cookies for our specific Supabase project
+          if (!name.includes('qbfoakwchpwgoiawjqxs')) {
+            return undefined
+          }
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options) {
