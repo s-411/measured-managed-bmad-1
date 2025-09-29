@@ -5,6 +5,7 @@ import { ProfileGuard } from '@/components/guards/ProfileGuard'
 import { FoodEntryForm } from '@/components/food/FoodEntryForm'
 import { FoodEntriesList } from '@/components/food/FoodEntriesList'
 import { DailySummaryCard } from '@/components/dashboard/DailySummaryCard'
+import { useDailyEntry } from '@/lib/hooks/useDailyEntry'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export default function CaloriesTrackingPage() {
@@ -12,6 +13,9 @@ export default function CaloriesTrackingPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Fetch daily entry data
+  const { entry: dailyEntry, loading: dailyLoading } = useDailyEntry(currentDate, refreshKey)
 
   const handleAddSuccess = () => {
     setShowAddForm(false)
@@ -55,7 +59,13 @@ export default function CaloriesTrackingPage() {
         {/* Daily Summary */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-mm-white mb-4">Daily Summary</h2>
-          <DailySummaryCard entry={null} key={`summary-${refreshKey}`} />
+          {dailyLoading ? (
+            <div className="card-mm p-6 text-center">
+              <p className="text-gray-400">Loading daily summary...</p>
+            </div>
+          ) : (
+            <DailySummaryCard entry={dailyEntry} key={`summary-${refreshKey}`} />
+          )}
         </div>
 
         {/* Quick Add Buttons */}
