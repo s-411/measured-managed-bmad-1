@@ -12,7 +12,7 @@ export class ProfileService {
     const { data, error } = await this.supabase
       .from('user_profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
 
     if (error) {
       throw new Error(`Failed to fetch profile: ${error.message}`)
@@ -40,7 +40,7 @@ export class ProfileService {
     const { data, error } = await this.supabase
       .from('user_profiles')
       .update(updates)
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single()
 
@@ -55,7 +55,7 @@ export class ProfileService {
     const { error } = await this.supabase
       .from('user_profiles')
       .delete()
-      .eq('id', userId)
+      .eq('user_id', userId)
 
     if (error) {
       throw new Error(`Failed to delete profile: ${error.message}`)
@@ -144,7 +144,14 @@ export class ProfileService {
     const macros = this.calculateMacroTargets(calorieTarget)
 
     const completeProfile: UserProfileInsert = {
-      ...profileData,
+      user_id: profileData.id,
+      name: profileData.name,
+      email: profileData.email,
+      age: profileData.age,
+      gender: profileData.gender,
+      height_cm: profileData.height_cm,
+      current_weight_kg: profileData.current_weight_kg,
+      activity_level: profileData.activity_level,
       bmr,
       tdee,
       calorie_target: calorieTarget,

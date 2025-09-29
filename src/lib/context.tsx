@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { AppState, AppAction, UserProfile } from '@/types';
-import { profileStorage, dailyEntryStorage, getTodayDateString } from '@/lib/storage';
+// Temporarily disabled - using new ProfileService instead
+// import { profileStorage, dailyEntryStorage, getTodayDateString } from '@/lib/storage';
+
+// Temporary utility function
+function getTodayDateString(): string {
+  return new Date().toISOString().split('T')[0];
+}
 
 // Initial state
 const initialState: AppState = {
@@ -200,6 +206,8 @@ const AppContext = createContext<{
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  // Temporarily disabled - using new ProfileService instead
+  /*
   // Load data on mount
   useEffect(() => {
     try {
@@ -233,6 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
     }
   }, [state.dailyEntries, state.isLoading]);
+  */
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
@@ -259,9 +268,11 @@ export function useProfile() {
   };
 
   const createProfile = (profileData: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const profile = profileStorage.create(profileData);
-    dispatch({ type: 'SET_PROFILE', payload: profile });
-    return profile;
+    // Temporarily disabled - using new ProfileService instead
+    // const profile = profileStorage.create(profileData);
+    // dispatch({ type: 'SET_PROFILE', payload: profile });
+    // return profile;
+    throw new Error('Use ProfileContext instead');
   };
 
   return {

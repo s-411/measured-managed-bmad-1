@@ -2,30 +2,41 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { profileStorage } from '@/lib/storage';
+import { useAuth } from '@/lib/context/AuthContext';
+import { useProfile } from '@/lib/context/ProfileContext';
 
 export default function HomePage() {
   const router = useRouter();
-  const [redirectMessage, setRedirectMessage] = useState('Checking profile...');
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
+  const [redirectMessage, setRedirectMessage] = useState('Loading...');
 
   useEffect(() => {
-    // Check if profile is complete
-    const isProfileComplete = profileStorage.isComplete();
-    
-    if (isProfileComplete) {
+    if (authLoading || profileLoading) {
+      setRedirectMessage('Checking your account...');
+      return;
+    }
+
+    if (!user) {
+      setRedirectMessage('Redirecting to login...');
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (!profile) {
+      setRedirectMessage('Setting up your profile...');
+      router.replace('/profile/setup');
+    } else {
       setRedirectMessage('Redirecting to Daily Tracker...');
       router.replace('/daily');
-    } else {
-      setRedirectMessage('Setting up your profile...');
-      // Add first-time user flag to URL so settings page can show welcome message
-      router.replace('/settings?firstTime=true');
     }
-  }, [router]);
+  }, [router, user, profile, authLoading, profileLoading]);
 
   return (
-    <div className="p-6 flex items-center justify-center min-h-screen">
+    <div className="p-6 flex items-center justify-center min-h-screen bg-mm-dark">
       <div className="text-center">
-        <p className="text-mm-gray">{redirectMessage}</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mm-blue mx-auto mb-4"></div>
+        <p className="text-mm-white">{redirectMessage}</p>
       </div>
     </div>
   );

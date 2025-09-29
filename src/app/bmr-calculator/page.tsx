@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { profileStorage } from '@/lib/storage';
-import { UserProfile } from '@/types';
+import { useProfile } from '@/lib/context/ProfileContext';
+import type { Database } from '@/lib/supabase/types';
 import { CalculatorIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 
+type UserProfile = Database['public']['Tables']['user_profiles']['Row']
+
 export default function BMRCalculatorPage() {
   const router = useRouter();
+  const { profile, updateProfile, loading } = useProfile();
   const [formData, setFormData] = useState({
     height: '',
     weight: '',
@@ -16,20 +19,17 @@ export default function BMRCalculatorPage() {
   });
   const [calculatedBMR, setCalculatedBMR] = useState<number | null>(null);
   const [isSaved, setIsSaved] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const existingProfile = profileStorage.get();
-    if (existingProfile) {
-      setProfile(existingProfile);
+    if (profile) {
       setFormData({
-        height: existingProfile.height ? existingProfile.height.toString() : '',
-        weight: existingProfile.weight ? existingProfile.weight.toString() : '',
-        age: '30', // Default age
-        gender: existingProfile.gender || 'male'
+        height: profile.height_cm ? profile.height_cm.toString() : '',
+        weight: profile.current_weight_kg ? profile.current_weight_kg.toString() : '',
+        age: profile.age ? profile.age.toString() : '30',
+        gender: profile.gender || 'male'
       });
     }
-  }, []);
+  }, [profile]);
 
   // Calculate BMR using Mifflin-St Jeor Equation
   const calculateBMR = () => {
@@ -54,30 +54,27 @@ export default function BMRCalculatorPage() {
     setCalculatedBMR(Math.round(bmr));
   };
 
-  const saveBMRToProfile = () => {
-    if (!calculatedBMR) return;
+  const saveBMRToProfile = async () => {
+    if (!calculatedBMR || !profile) return;
 
-    const profileData = {
-      bmr: calculatedBMR,
-      height: parseFloat(formData.height),
-      weight: parseFloat(formData.weight),
-      gender: formData.gender
-    };
+    try {
+      await updateProfile({
+        bmr: calculatedBMR,
+        height_cm: parseFloat(formData.height),
+        current_weight_kg: parseFloat(formData.weight),
+        age: parseFloat(formData.age),
+        gender: formData.gender
+      });
 
-    if (profile) {
-      const updated = profileStorage.update(profileData);
-      if (updated) setProfile(updated);
-    } else {
-      const newProfile = profileStorage.create(profileData);
-      setProfile(newProfile);
+      setIsSaved(true);
+
+      // Redirect to settings after a short delay
+      setTimeout(() => {
+        router.push('/settings');
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to save BMR:', error);
     }
-
-    setIsSaved(true);
-    
-    // Redirect to settings after a short delay
-    setTimeout(() => {
-      router.push('/settings');
-    }, 1500);
   };
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {

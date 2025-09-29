@@ -475,7 +475,7 @@ export interface Database {
       }
       user_profiles: {
         Row: {
-          id: string
+          user_id: string
           name: string
           email: string | null
           age: number
@@ -494,7 +494,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
-          id: string
+          user_id: string
           name: string
           email?: string | null
           age: number
@@ -513,7 +513,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          id?: string
+          user_id?: string
           name?: string
           email?: string | null
           age?: number
@@ -533,8 +533,8 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "user_profiles_id_fkey"
-            columns: ["id"]
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
