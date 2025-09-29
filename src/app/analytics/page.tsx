@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { profileStorage, dailyEntryStorage, calculations, nirvanaSessionStorage, bodyPartMappingStorage, sessionCorrelationStorage } from '@/lib/storage';
+// Temporarily disabled - needs migration to new storage system
+// import { profileStorage, dailyEntryStorage, calculations, nirvanaSessionStorage, bodyPartMappingStorage, sessionCorrelationStorage } from '@/lib/storage';
 import { UserProfile, NirvanaSession, NirvanaEntry, BodyPartUsage, CorrelationAnalysis } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
 import {
@@ -61,6 +62,26 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
+  // Temporarily return placeholder while migrating to new storage system
+  return (
+    <div className="p-6 flex items-center justify-center min-h-screen bg-mm-dark">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-mm-white mb-4">Analytics Dashboard</h1>
+        <p className="text-mm-gray">This page is being updated to work with the new database system.</p>
+        <p className="text-mm-gray mt-2">Please check back soon!</p>
+      </div>
+    </div>
+  );
+}
+
+/* Original function temporarily disabled during migration
+export default function AnalyticsPageOriginal() {
+  return null;
+}
+*/
+
+/* Actual original function - disabled during migration
+function AnalyticsPageActualOriginal() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [calorieBalancePeriod, setCalorieBalancePeriod] = useState<7 | 30 | 90>(30);
@@ -1404,3 +1425,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+*/
